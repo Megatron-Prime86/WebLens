@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime, requests, uvicorn, os
 
-# --- DATABASE ---
+# --- DB SETUP ---
 DB_PATH = os.path.join(os.getcwd(), "weblens.db")
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -22,36 +22,38 @@ class Scan(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# --- APP ---
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-# Ensure templates directory exists
 templates = Jinja2Templates(directory="templates")
 
+# --- THE FIX IS HERE ---
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     db = SessionLocal()
     try:
         scans = db.query(Scan).order_by(Scan.id.desc()).limit(20).all()
-        return templates.TemplateResponse("history.html", {"request": request, "scans": scans})
+        # Explicitly passing the context dictionary
+        context = {"request": request, "scans": scans}
+        return templates.TemplateResponse("history.html", context)
     except Exception as e:
         return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
     finally:
         db.close()
 
+# ... Keep /analyze and /history routes the same as before ...
+
 @app.get("/analyze")
 async def analyze(url: str):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebLens/1.0'}
+        headers = {'User-Agent': 'WebLens/1.0'}
         res = requests.get(url, timeout=7, headers=headers)
-        content = res.text.lower()
         tech_list = []
+        content = res.text.lower()
         if "wp-content" in content: tech_list.append("WordPress")
         if "react" in content: tech_list.append("React.js")
         if "mediawiki" in content: tech_list.append("MediaWiki")
         
-        server = res.headers.get("Server", "Cloudflare/Generic")
+        server = res.headers.get("Server", "Cloudflare")
         tech_list.append(server)
 
         db = SessionLocal()

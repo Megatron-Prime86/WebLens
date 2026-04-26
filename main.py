@@ -26,29 +26,32 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 templates = Jinja2Templates(directory="templates")
 
-# --- THE FIX IS HERE ---
+# --- FIXED DASHBOARD ROUTE ---
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     db = SessionLocal()
     try:
-        scans = db.query(Scan).order_by(Scan.id.desc()).limit(20).all()
-        # Explicitly passing the context dictionary
-        context = {"request": request, "scans": scans}
-        return templates.TemplateResponse("history.html", context)
+        # Fetching latest 20 scans
+        scans_from_db = db.query(Scan).order_by(Scan.id.desc()).limit(20).all()
+        
+        # Explicit context dictionary
+        # This prevents the 'tuple' error by clearly defining keys
+        return templates.TemplateResponse(
+            name="history.html", 
+            context={"request": request, "scans": scans_from_db}
+        )
     except Exception as e:
-        return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
+        return HTMLResponse(content=f"Dashboard Error: {str(e)}", status_code=500)
     finally:
         db.close()
-
-# ... Keep /analyze and /history routes the same as before ...
 
 @app.get("/analyze")
 async def analyze(url: str):
     try:
         headers = {'User-Agent': 'WebLens/1.0'}
         res = requests.get(url, timeout=7, headers=headers)
-        tech_list = []
         content = res.text.lower()
+        tech_list = []
         if "wp-content" in content: tech_list.append("WordPress")
         if "react" in content: tech_list.append("React.js")
         if "mediawiki" in content: tech_list.append("MediaWiki")

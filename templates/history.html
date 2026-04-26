@@ -1,40 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WebLens | Analytics Dashboard</title>
+    <meta charset="UTF-8">
+    <title>WebLens Analytics</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; padding: 40px; }
-        .container { width: 100%; max-width: 900px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); }
-        h1 { color: #38bdf8; margin-bottom: 24px; font-weight: 300; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; border-bottom: 2px solid #38bdf8; color: #38bdf8; }
-        td { padding: 16px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .tag { background: #38bdf8; color: #0f172a; padding: 4px 8px; border-radius: 6px; font-size: 12px; margin-right: 5px; font-weight: bold; }
-        .url { color: #94a3b8; text-decoration: none; font-size: 14px; }
-        .url:hover { color: #38bdf8; }
+        body { font-family: 'Inter', sans-serif; background: #0b0e14; color: #e2e8f0; margin: 0; padding: 40px; }
+        .card { max-width: 1000px; margin: auto; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: #58a6ff; font-weight: 400; border-bottom: 1px solid #30363d; padding-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: #8b949e; font-size: 13px; text-transform: uppercase; padding: 12px; }
+        td { padding: 15px 12px; border-bottom: 1px solid #21262d; font-size: 14px; }
+        .tag { background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 4px 10px; border-radius: 20px; font-size: 11px; margin-right: 5px; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .url { color: #c9d1d9; text-decoration: none; }
+        .url:hover { text-decoration: underline; color: #58a6ff; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 WebLens Scan History</h1>
+    <div class="card">
+        <h1>🔍 WebLens Live Dashboard</h1>
         <table>
             <thead>
                 <tr>
-                    <th>Website</th>
-                    <th>Technologies Detected</th>
-                    <th>Time</th>
+                    <th>Target Site</th>
+                    <th>Detected Stack</th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in scans %}
+                {% for scan in scans %}
                 <tr>
-                    <td><a class="url" href="{{ item.url }}" target="_blank">{{ item.url[:40] }}...</a></td>
+                    <td><a href="{{ scan.url }}" class="url" target="_blank">{{ scan.url[:50] }}...</a></td>
                     <td>
-                        {% for t in item.tech.split(',') %}
-                        <span class="tag">{{ t.strip() }}</span>
-                        {% endfor %}
+                        {% if scan.tech %}
+                            {% for t in scan.tech.split(',') %}
+                                <span class="tag">{{ t.strip() }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span style="color: #484f58;">Unknown</span>
+                        {% endif %}
                     </td>
-                    <td><small style="color:#64748b">{{ item.timestamp.strftime('%H:%M') }}</small></td>
                 </tr>
                 {% endfor %}
             </tbody>

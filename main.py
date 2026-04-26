@@ -61,8 +61,11 @@ def get_history():
     db.close()
     return data
 
+# ... (Keep your imports and DB setup the same)
+
 if __name__ == "__main__":
-    import os
     import uvicorn
+    import os
+    # Render provides a PORT environment variable. We MUST use it.
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)

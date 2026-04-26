@@ -31,14 +31,14 @@ templates = Jinja2Templates(directory="templates")
 async def dashboard(request: Request):
     db = SessionLocal()
     try:
-        # Fetching latest 20 scans
         scans_from_db = db.query(Scan).order_by(Scan.id.desc()).limit(20).all()
         
-        # Explicit context dictionary
-        # This prevents the 'tuple' error by clearly defining keys
+        # In modern FastAPI, we pass request as the first argument, 
+        # AND context as the second.
         return templates.TemplateResponse(
+            request=request, 
             name="history.html", 
-            context={"request": request, "scans": scans_from_db}
+            context={"scans": scans_from_db}
         )
     except Exception as e:
         return HTMLResponse(content=f"Dashboard Error: {str(e)}", status_code=500)

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebLens | Analytics Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; padding: 40px; }
+        .container { width: 100%; max-width: 900px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); }
+        h1 { color: #38bdf8; margin-bottom: 24px; font-weight: 300; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid #38bdf8; color: #38bdf8; }
+        td { padding: 16px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .tag { background: #38bdf8; color: #0f172a; padding: 4px 8px; border-radius: 6px; font-size: 12px; margin-right: 5px; font-weight: bold; }
+        .url { color: #94a3b8; text-decoration: none; font-size: 14px; }
+        .url:hover { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 WebLens Scan History</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Website</th>
+                    <th>Technologies Detected</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in scans %}
+                <tr>
+                    <td><a class="url" href="{{ item.url }}" target="_blank">{{ item.url[:40] }}...</a></td>
+                    <td>
+                        {% for t in item.tech.split(',') %}
+                        <span class="tag">{{ t.strip() }}</span>
+                        {% endfor %}
+                    </td>
+                    <td><small style="color:#64748b">{{ item.timestamp.strftime('%H:%M') }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

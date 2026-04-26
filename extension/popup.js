@@ -4,7 +4,7 @@ const viewScan = document.getElementById('view-scan');
 const viewHist = document.getElementById('view-hist');
 
 // Replace this variable with your actual Render URL!
-const API_BASE_URL = "https://your-web-service.onrender.com";
+const API_BASE_URL = "https://weblens-prime.onrender.com";
 
 tabScan.onclick = () => {
     viewScan.style.display = 'block'; viewHist.style.display = 'none';

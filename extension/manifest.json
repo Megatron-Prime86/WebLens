@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WebLens Pro: Live",
-  "description": "Full-stack technology and security detector connected to cloud API.",
-  "version": "1.1",
+  "description": "Full-stack technology detector connected to Render Cloud.",
+  "version": "1.2",
   "action": {
     "default_popup": "popup.html"
   },
@@ -11,6 +11,6 @@
     "storage"
   ],
   "host_permissions": [
-    "https://weblens-prime.onrender.com/*"
+    "https://weblens-f2br.onrender.com/*"
   ]
 }

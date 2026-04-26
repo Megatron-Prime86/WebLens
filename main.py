@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime, requests, uvicorn, os
 
-# --- DB SETUP ---
+# --- DATABASE ---
 DB_PATH = os.path.join(os.getcwd(), "weblens.db")
 engine = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -22,43 +22,40 @@ class Scan(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# --- APP ---
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# --- TEMPLATE SETUP ---
+# Ensure templates directory exists
 templates = Jinja2Templates(directory="templates")
 
-# This helper makes sure the date looks nice and doesn't crash the page
 @app.get("/", response_class=HTMLResponse)
-def dashboard(request: Request):
+async def dashboard(request: Request):
     db = SessionLocal()
     try:
         scans = db.query(Scan).order_by(Scan.id.desc()).limit(20).all()
-        # Pass the current year for the footer too!
-        return templates.TemplateResponse("history.html", {
-            "request": request, 
-            "scans": scans,
-            "now": datetime.datetime.utcnow().year
-        })
+        return templates.TemplateResponse("history.html", {"request": request, "scans": scans})
     except Exception as e:
-        return HTMLResponse(content=f"Backend Error: {str(e)}", status_code=500)
+        return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
     finally:
         db.close()
 
-# Keep your /analyze and /history (JSON) routes exactly as they were before
 @app.get("/analyze")
-def analyze(url: str):
+async def analyze(url: str):
     try:
-        headers = {'User-Agent': 'WebLens/1.0'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebLens/1.0'}
         res = requests.get(url, timeout=7, headers=headers)
-        tech_list = []
         content = res.text.lower()
+        tech_list = []
         if "wp-content" in content: tech_list.append("WordPress")
         if "react" in content: tech_list.append("React.js")
         if "mediawiki" in content: tech_list.append("MediaWiki")
         
+        server = res.headers.get("Server", "Cloudflare/Generic")
+        tech_list.append(server)
+
         db = SessionLocal()
-        db.add(Scan(url=url, tech=", ".join(tech_list) if tech_list else "Generic Tech"))
+        db.add(Scan(url=url, tech=", ".join(tech_list)))
         db.commit()
         db.close()
         return {"status": "success", "tech": tech_list}
@@ -66,8 +63,12 @@ def analyze(url: str):
         return {"status": "error"}
 
 @app.get("/history")
-def get_history_api():
+async def get_history_api():
     db = SessionLocal()
     data = db.query(Scan).order_by(Scan.id.desc()).limit(10).all()
     db.close()
     return data
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

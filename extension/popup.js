@@ -1,37 +1,82 @@
-// Change this to your live Render URL
 const API_BASE_URL = "https://weblens-f2br.onrender.com";
 
-document.getElementById('scan-btn').addEventListener('click', async () => {
-    const statusDiv = document.getElementById('status');
-    const resultsDiv = document.getElementById('results');
+// --- Tab Switching Logic ---
+const tabScan = document.getElementById('tab-scan');
+const tabHist = document.getElementById('tab-hist');
+const viewScan = document.getElementById('view-scan');
+const viewHist = document.getElementById('view-hist');
+
+tabScan.addEventListener('click', () => {
+    tabScan.classList.add('active');
+    tabHist.classList.remove('active');
+    viewScan.style.display = 'block';
+    viewHist.style.display = 'none';
+});
+
+tabHist.addEventListener('click', async () => {
+    tabHist.classList.add('active');
+    tabScan.classList.remove('active');
+    viewScan.style.display = 'none';
+    viewHist.style.display = 'block';
     
-    statusDiv.innerText = "🔍 Scanning & Syncing...";
-    resultsDiv.innerHTML = "";
+    // Auto-fetch history when clicking the tab
+    loadHistory();
+});
+
+// --- History Logic ---
+async function loadHistory() {
+    const histList = document.getElementById('hist-list');
+    histList.innerHTML = "<p style='font-size:10px; color:#888'>Loading history...</p>";
 
     try {
-        // 1. Get the current active tab
+        const response = await fetch(`${API_BASE_URL}/history`);
+        const data = await response.json();
+
+        histList.innerHTML = ""; // Clear loader
+        if (data.length > 0) {
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "hist-item";
+                div.innerHTML = `
+                    <div style="color:#f15a24; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.url}</div>
+                    <div style="color:#888; font-size:9px;">${item.tech}</div>
+                `;
+                histList.appendChild(div);
+            });
+        } else {
+            histList.innerHTML = "<p style='font-size:10px;'>No scans yet.</p>";
+        }
+    } catch (error) {
+        histList.innerHTML = "<p style='font-size:10px; color:red;'>Server unreachable.</p>";
+    }
+}
+
+// --- Automated Scan on Load ---
+async function runAutoScan() {
+    const urlText = document.getElementById('url-text');
+    const techTags = document.getElementById('tech-tags');
+    
+    try {
         let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
-        // 2. Tell the Backend to analyze this URL
-        // This is the part that saves it to your history!
+        urlText.innerText = tab.url;
+        techTags.innerHTML = "<span style='font-size:10px;'>Analyzing...</span>";
+
         const response = await fetch(`${API_BASE_URL}/analyze?url=${encodeURIComponent(tab.url)}`);
         const data = await response.json();
 
         if (data.status === "success") {
-            statusDiv.innerText = "✅ Scan Complete & Saved";
-            
-            // 3. Display the results in the popup
-            data.tech.forEach(tech => {
+            techTags.innerHTML = ""; // Clear loader
+            data.tech.forEach(t => {
                 const span = document.createElement('span');
                 span.className = "tag";
-                span.innerText = tech;
-                resultsDiv.appendChild(span);
+                span.innerText = t;
+                techTags.appendChild(span);
             });
-        } else {
-            statusDiv.innerText = "❌ Error: " + (data.message || "Unknown error");
         }
-    } catch (error) {
-        console.error("Connection Error:", error);
-        statusDiv.innerText = "❌ Server Offline (Waking up Render...)";
+    } catch (e) {
+        techTags.innerText = "Check connection...";
     }
-});
+}
+
+// Run scan as soon as popup opens
+runAutoScan();
